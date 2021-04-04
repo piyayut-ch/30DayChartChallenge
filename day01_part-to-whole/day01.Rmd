@@ -1,0 +1,179 @@
+```{r}
+library(tidyverse)
+library(readxl)
+library(treemapify)
+library(countrycode)
+library(viridis)
+library(hrbrthemes)
+
+setwd(here::here())
+```
+
+```{r}
+psd_rice <- vroom::vroom("data/psd_rice.csv")
+```
+
+```{r}
+options(repr.plot.width=7, repr.plot.height=5)
+
+psd_rice_2019 %>% 
+  filter(Attribute_ID == "088") %>%
+  mutate(
+    top_exporter = fct_lump(Country_Name, 3, w = Value),
+  ) %>%
+  group_by(top_exporter) %>%
+  summarize(
+    value = sum(Value)
+  ) %>%
+  mutate(
+    fraction = value/sum(value),
+    ymax = cumsum(fraction),
+    ymin = c(0, head(ymax, n=-1)),
+    labelPosition = (ymax + ymin) / 2,
+    label = paste0(top_exporter, "\n", round(fraction*100), "%")
+  ) %>%
+  ggplot(aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=top_exporter)) +
+    geom_rect() +
+    geom_text( x=2, aes(y=labelPosition, label=label, color=top_exporter), size=4) + # x here controls label position (inner / outer)
+    scale_fill_manual(values = c("#ff9a2f", "#2D2A4A", "#DA251D", "grey70")) +
+    scale_color_manual(values = c("#ff9a2f", "#2D2A4A", "#DA251D", "grey70")) +
+    coord_polar(theta="y") +
+    labs(title = "BIG 3: Rice Exporters") + 
+    xlim(c(0, 4)) +
+    theme_void() +
+    theme(legend.position = "none")
+```
+
+```{r}
+# load library
+library(ggplot2)
+
+# Create test data.
+data <- data.frame(
+  category=c("A", "B", "C"),
+  count=c(10, 60, 30)
+)
+ 
+# Compute percentages
+data$fraction <- data$count / sum(data$count)
+
+# Compute the cumulative percentages (top of each rectangle)
+data$ymax <- cumsum(data$fraction)
+
+# Compute the bottom of each rectangle
+data$ymin <- c(0, head(data$ymax, n=-1))
+
+# Compute label position
+data$labelPosition <- (data$ymax + data$ymin) / 2
+
+# Compute a good label
+data$label <- paste0(data$category, "\n value: ", data$count)
+
+data
+# # Make the plot
+# ggplot(data, aes(ymax=ymax, ymin=ymin, xmax=4, xmin=3, fill=category)) +
+#   geom_rect() +
+#   geom_text( x=2, aes(y=labelPosition, label=label, color=category), size=6) + # x here controls label position (inner / outer)
+#   scale_fill_brewer(palette=3) +
+#   scale_color_brewer(palette=3) +
+#   coord_polar(theta="y") +
+#   xlim(c(-1, 4)) +
+#   theme_void() +
+#   theme(legend.position = "none")
+```
+
+```{r}
+psd_rice_2019 <- psd_rice %>% filter(Market_Year == 2018)
+
+psd_rice_2019 %>% 
+  filter(Attribute_ID == "088") %>%
+  arrange(-Value) %>%
+  mutate(country = fct_reorder(Country_Name, Value)) %>%
+  ggplot(aes(fill=country, y=Value, x=Market_Year)) + 
+    geom_bar(position="stack", stat="identity", color = "white") +
+    scale_fill_viridis(discrete = TRUE, direction = -1) +
+    coord_flip() +
+#     ggtitle("Studying 4 species..") +
+    theme_ipsum() +
+    theme(legend.position = "none") +
+    xlab("")
+```
+
+```{r}
+xx$country
+```
+
+```{r}
+sheets <- readxl::excel_sheets("data/hs1006_trademap.xlsx")
+```
+
+```{r}
+df <- sheets %>%
+  map(function(x) {
+    read_excel("data/hs1006_trademap.xlsx", sheet = x, na = c("", "No Quantity")) %>%
+      pivot_longer(-importer, names_to = "year") %>%
+      mutate(exporter = x)
+  }) %>%
+  reduce(bind_rows) %>%
+  mutate(year = as.integer(year))
+```
+
+```{r}
+df %>%
+  filter(year == 2019) %>%
+  group_by(exporter, year) %>%
+  summarize(value = sum(value, na.rm = TRUE))
+```
+
+```{r}
+df2 <- df %>% 
+  mutate(
+    importer_iso3 = countrycode(importer, "country.name", "iso3c")
+  ) %>%
+  left_join(
+    codelist, by = c("importer_iso3" = "iso3c")
+  )
+```
+
+```{r}
+df2019 <- df2 %>% filter(year == 2019)
+```
+
+```{r}
+x <- df2019 %>% 
+  filter(!is.na(continent), !is.na(value)) %>%
+  mutate(
+    exporter = factor(exporter),
+    country = factor(country.name.en),
+    continent = factor(continent),
+    region = factor(continent)
+  ) %>%
+  select(exporter, country, continent, region, value)
+```
+
+```{r}
+layout_opt <- "squarified"
+options(repr.plot.width=7, repr.plot.height=14)
+ggplot(x, aes(area = value, fill = continent, label = country, subgroup = continent)) +
+  geom_treemap(color = "white", size = 1, layout = layout_opt) +
+  geom_treemap_subgroup_border(colour = "black", size = 3) +
+#   geom_treemap_subgroup_text(
+#     place = "centre", grow = T, alpha = 0.2, colour = "black",
+#     fontface = "italic", min.size = 0) +
+  geom_treemap_text(place = "bottomleft", reflow = T, colour = "black", layout = layout_opt) +
+  facet_wrap( ~ exporter, ncol = 1) +
+  labs(
+    title = "Rice BIG Three: India, Thailand and Vietnam",
+    subtitle = "Rice export volume share by destinations in 2019", 
+    caption = "Source: Trademap"
+  ) + 
+  theme_ipsum(plot_title_size = 22) +
+#   scale_fill_brewer(palette = "Set1") +
+  theme(legend.position = "bottom")
+
+ggsave("figures/day01.png", width = 7, height = 12)
+```
+
+```{r}
+
+```
