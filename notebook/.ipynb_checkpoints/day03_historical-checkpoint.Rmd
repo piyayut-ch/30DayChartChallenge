@@ -1,0 +1,78 @@
+```{r}
+library(tidyverse)
+library(gghighlight)
+library(readxl)
+library(echarts4r)
+
+setwd(here::here())
+```
+
+```{r}
+psd_rice <- vroom::vroom("data/psd_rice.csv")
+```
+
+```{r}
+psd_rice %>% count(Attribute_ID, Attribute_Description, Unit_Description)
+```
+
+```{r}
+top9_rice_producers <- psd_rice %>%
+  filter(Attribute_ID == "028", Market_Year == 2020) %>%
+  top_n(12, Value) %>% 
+  pull(Country_Name)
+
+top50_rice_producers <- psd_rice %>%
+  filter(Attribute_ID == "028", Market_Year == 2020) %>%
+  top_n(50, Value) %>% 
+  pull(Country_Name)
+```
+
+```{r}
+mytheme <- 
+  theme(
+    panel.grid.major.x =element_line(colour = "wheat4"),
+    panel.grid.major.y =element_line(colour = "wheat4"),
+    panel.grid.minor.x = element_blank(),
+    panel.grid.minor.y = element_blank(),
+    axis.text = element_text(colour = "black", size = 16, hjust = 0.5),
+    axis.title.x = element_text(colour = "black", size = 20, face = "bold", vjust = 0.8),
+    axis.title.y = element_blank(),
+    strip.text = element_text(size=16, colour = "blue4", face = "bold", hjust = 0),
+    strip.background = element_rect(color=NULL, fill="snow", size=1.5),
+    plot.title = element_text(color = "black", size = 20, face = "bold"),
+    plot.subtitle = element_text(color = "grey20", size = 16),
+    plot.tag = element_text(color = "black", face = "italic", size = 16, lineheight = 0.9),
+    plot.tag.position = c(0.15,0.02),
+    plot.caption = element_text(color = "grey20", size = 14, lineheight = 0.9),
+    plot.background = element_rect(fill = "snow"),
+    panel.background = element_rect(fill = "snow"), 
+    panel.border = element_blank(),
+    panel.spacing.y = unit(1, "lines")
+  )
+```
+
+```{r}
+options(repr.plot.width=12, repr.plot.height=12)
+
+psd_rice %>% 
+  filter(Attribute_ID == "184", Country_Name %in% top50_rice_producers) %>%
+  ggplot(aes(Market_Year, Value, colour = Country_Name)) +
+    geom_path(color='blue', lineend = "round", size=1.5) +
+    gghighlight(Country_Name %in% top9_rice_producers, use_direct_label = FALSE) +
+    mytheme +
+    scale_x_continuous(breaks = c(1970, 1990, 2010)) +
+    theme(legend.position = "none") +
+    facet_wrap(~ Country_Name, ncol = 3) +
+    labs(
+      title = "Rice Yield of Major Producers since the Green Revolution",
+      subtitle = "Tons per ha",
+      caption = "Source: USDA",
+      x = ""
+    )
+
+ggsave("figures/day03.png", width = 12, height = 12)
+```
+
+```{r}
+
+```
