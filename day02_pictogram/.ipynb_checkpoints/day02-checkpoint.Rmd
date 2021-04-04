@@ -28,15 +28,15 @@ starwars %>%
 
 ```{r}
 starwars %>%
-  filter(name %in% starwars_char) %>%
+  filter(name %in% starwars_char[1:2]) %>%
   select(name, height) %>%
   mutate(
-    symbol = glue::glue("image://data/starwars/{name}.png")
-  ) %>% 
-  e_charts(name) %>% 
-  e_pictorial(height, symbol) %>% 
-  e_legend(FALSE) %>% 
-  e_title("Images", "Height")
+    symbol = glue::glue("image://https://raw.githubusercontent.com/piyayut-ch/30DayChartChallenge/main/data/starwars/{name}.png")
+  ) #%>% 
+#   e_charts(name) %>% 
+#   e_pictorial(height, symbol) %>% 
+#   e_legend(FALSE) %>% 
+#   e_title("Images", "Height")
 ```
 
 ```{r}
