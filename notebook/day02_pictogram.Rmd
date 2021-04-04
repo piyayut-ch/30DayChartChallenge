@@ -1,0 +1,60 @@
+# Set up
+
+```{r}
+library(tidyverse)
+library(readxl)
+library(echarts4r)
+
+setwd(here::here())
+```
+
+# Data Prep
+
+```{r}
+psd_rice <- vroom::vroom("data/psd_rice.csv")
+
+df <- psd_rice %>% 
+  filter(
+    Market_Year == 2018, # marketing year 2018 means 2018/19
+    Attribute_ID == "088" # rice
+  ) %>% 
+  top_n(10, Value) %>% # only top 10 exporters
+  arrange(Value) %>% # order
+  mutate(
+    country = fct_reorder(Country_Name, Value), # create an order factor variable
+    value = Value/1e3 # rescale to million tons
+  ) %>%
+  select(country, value)
+
+df
+```
+
+# Plot using `echarts4r`
+
+```{r}
+df %>%
+  e_charts(country, width = 800, height = 600, renderer = "canvas") %>%
+  e_pictorial(
+    value,
+    name = " = 1 Million Ton",
+    symbol = "image://https://raw.githubusercontent.com/piyayut-ch/30DayChartChallenge/main/data/rice.png",
+    symbolRepeat = TRUE, 
+    symbolClip = TRUE,
+    symbolMargin = c(2,2),
+    symbolSize = c(50, 50)
+  ) %>%
+  e_title(
+    "Top 10 Rice Exporters by Volume in 2019",
+    "Source: USDA"
+  ) %>%
+  e_flip_coords() %>%
+  e_legend(
+    show = TRUE, left = "64%", top = "75%",
+    itemWidth = 40, itemHeight = 40)  %>%
+  e_toolbox() %>%
+  e_toolbox_feature()
+```
+
+```{r}
+
+```
