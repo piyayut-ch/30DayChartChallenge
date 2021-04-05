@@ -2,7 +2,6 @@
 library(tidyverse)
 library(gghighlight)
 library(readxl)
-library(echarts4r)
 
 setwd(here::here())
 ```
