@@ -6,5 +6,22 @@ library(xml2)
 ```
 
 ```{r}
+web <- 'https://www.imdb.com/title/tt0486655/?ref_=nv_sr_srsg_0'
+website <- read_html(web)
+website
+```
+
+```{r}
+x <- website %>% 
+#   html_elements(".article") %>%
+  html_elements(c(".txt-block")) %>% 
+  html_text2()
+```
+
+```{r}
+x[[13]] %>% paste()
+```
+
+```{r}
 
 ```
