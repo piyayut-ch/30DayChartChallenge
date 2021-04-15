@@ -1,0 +1,105 @@
+```{r}
+library(tidyverse)
+library(ggtext)
+library(wooldridge)
+library(hrbrthemes)
+library(latex2exp)
+
+setwd(here::here())
+```
+
+```{r}
+library(WDI)
+```
+
+```{r}
+WDI::WDIsearch("value added") %>%
+  as_tibble() %>%
+  writexl::write_xlsx("gdp.xlsx")
+```
+
+```{r}
+x <- WDI::WDI(
+  indicator = "SL.AGR.EMPL.ZS"
+)
+```
+
+```{r}
+x %>%
+  filter(year == 1991) %>%
+  arrange(SL.AGR.EMPL.ZS) %>%
+  drop_na() %>% pull(country)
+```
+
+```{r}
+options(repr.plot.width=7, repr.plot.height=20)
+
+x %>%
+  filter(year == 2019) %>%
+  mutate(country = fct_reorder(country, SL.AGR.EMPL.ZS)) %>%
+  ggplot(aes(country, SL.AGR.EMPL.ZS)) +
+  geom_col() +
+  coord_flip()
+```
+
+```{r}
+options(repr.plot.width=7, repr.plot.height=20)
+
+x %>%
+  filter(year == 1991) %>%
+  mutate(country = fct_reorder(country, SL.AGR.EMPL.ZS)) %>%
+  ggplot(aes(country, SL.AGR.EMPL.ZS)) +
+  geom_col() +
+  coord_flip()
+```
+
+```{r}
+x %>%
+  filter(iso2c == "CL") %>%
+  drop_na(SL.AGR.EMPL.ZS)
+```
+
+```{r}
+x %>%
+  filter(year == "1971", !is.na(NV.AGR.TOTL.ZS)) %>% pull(country)
+```
+
+```{r}
+x %>%
+  filter(iso2c == "BR", !is.na(NV.AGR.TOTL.ZS))
+```
+
+```{r}
+coef_ <- lm(salary ~ roe, ceosal1) %>% coef
+
+lab_md <- TeX(r'($y = \alpha + \beta $)')
+```
+
+```{r}
+lab_md
+```
+
+```{r}
+ggplot(ceosal1,
+       aes(y = salary, x = roe)
+      ) +
+  geom_point(alpha = 0.7, color = "blue") +
+  geom_abline(
+    intercept = coef_[1], 
+    slope = coef_[2]
+  ) +
+  theme_ipsum(
+    base_size = 14,
+    axis_title_size = 18
+  ) +
+  annotate(
+    geom = 'text', x = 45, y = 4000, size = 8, 
+    label = lab_md, 
+    parse = TRUE
+  ) +
+  ylim(c(0, 5000))
+```
+
+```{r}
+
+```

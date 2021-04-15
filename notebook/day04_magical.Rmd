@@ -2,17 +2,10 @@
 library(tidyverse)
 library(readxl)
 library(hrbrthemes)
-library(grid)
-library(png)
 library(cowplot)
 library(ggtext)
 
 setwd(here::here())
-```
-
-```{r}
-img <- png::read("data/ghibli2.png")
-g_pic <- rasterGrob(img, interpolate=TRUE)
 ```
 
 ```{r}
@@ -72,8 +65,4 @@ suppressWarnings(
 )
 
 ggsave("figures/day04.png", width = 12, height = 8)
-```
-
-```{r}
-
 ```
